@@ -1,81 +1,202 @@
-import { useState, useRef } from 'react'
-import { useAIStore } from '../store/aiStore'
-import { Send, Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { useAIStore, getDecryptedApiKey } from '../store/aiStore'
+import { generatePrototype } from '../services/aiService'
+import { Send, Bot, User, Loader2, AlertCircle } from 'lucide-react'
 
 export default function ChatPanel() {
-  const { messages, addMessage, provider, apiKey } = useAIStore()
+  const { messages, addMessage, updateLastMessage, provider, isProcessing, setProcessing } = useAIStore()
   const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const messagesEnd = useRef<HTMLDivElement>(null)
+  const [error, setError] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
   const handleSubmit = async () => {
-    if (!input.trim() || !provider || !apiKey) return
+    if (!input.trim() || isProcessing) return
     
-    const userMessage = { id: Date.now().toString(), role: 'user' as const, content: input, timestamp: new Date() }
-    addMessage(userMessage)
+    const apiKey = getDecryptedApiKey()
+    if (!apiKey) {
+      setError('Please set up your API key first')
+      return
+    }
+    
+    setError(null)
+    const userMessage = input.trim()
     setInput('')
-    setLoading(true)
+    
+    addMessage({
+      role: 'user',
+      content: userMessage,
+      prototype: undefined
+    })
+    
+    setProcessing(true)
+    
+    try {
+      addMessage({
+        role: 'assistant',
+        content: '',
+        prototype: undefined
+      })
+      
+      const response = await generatePrototype(userMessage, provider)
+      
+      updateLastMessage({
+        content: response.content,
+        prototype: {
+          code: response.code,
+          diagrams: response.diagrams,
+          instructions: response.instructions,
+          parts: response.parts,
+          modelType: response.modelType
+        }
+      })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage)
+      
+      updateLastMessage({
+        content: `Error: ${errorMessage}`
+      })
+    } finally {
+      setProcessing(false)
+    }
+  }
 
-    setTimeout(() => {
-      const aiResponse = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant' as const,
-        content: `Understood. Processing: "${input}"\n\nGenerating prototype files, diagrams, and models. This is a demo — real AI integration coming soon.`,
-        timestamp: new Date()
-      }
-      addMessage(aiResponse)
-      setLoading(false)
-    }, 1500)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit()
+    }
   }
 
   return (
-    <div className="h-full flex flex-col bg-white text-black">
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 font-mono text-sm">
+    <div className="flex-1 flex flex-col bg-white border-r border-slate-200">
+      {error && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-3 flex items-center gap-2 text-red-700 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+      
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-400">
-            <div className="max-w-xs">
-              <p className="mb-2">nyxer_</p>
-              <p className="text-xs">Describe a product. Get code, diagrams, 3D models. That's it.</p>
-            </div>
-          </div>
+          <EmptyState />
         ) : (
-          messages.map(msg => (
-            <div key={msg.id} className={`font-mono text-sm ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-              <span className="text-xs text-gray-400 mb-1 block">
-                {msg.role === 'user' ? '→ you' : '← nyxer'}
-              </span>
-              <div className={`inline-block p-3 max-w-[85%] ${
-                msg.role === 'user' 
-                  ? 'bg-black text-white' 
-                  : 'bg-gray-100 text-black border border-gray-200'
-              }`}>
-                <pre className="whitespace-pre-wrap font-mono text-sm">{msg.content}</pre>
-              </div>
-            </div>
+          messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
           ))
         )}
-        <div ref={messagesEnd} />
+        <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t-2 border-black">
-        <div className="flex gap-0">
-          <input
-            type="text"
+      <div className="p-4 border-t border-slate-200">
+        <div className="flex gap-3">
+          <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            placeholder={provider ? "describe a product..." : "select a provider first"}
+            onKeyDown={handleKeyDown}
+            placeholder={provider ? "Describe a product idea..." : "Set up your API key first"}
             disabled={!provider}
-            className="flex-1 p-3 bg-white border-2 border-black font-mono text-sm focus:outline-none focus:bg-gray-50 disabled:bg-gray-100"
+            className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent disabled:bg-slate-100 disabled:text-slate-400"
+            rows={2}
           />
           <button
             onClick={handleSubmit}
-            disabled={!input.trim() || loading}
-            className="px-6 bg-black text-white border-2 border-black font-mono text-sm hover:bg-gray-800 disabled:opacity-50"
+            disabled={!input.trim() || isProcessing}
+            className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
           >
-            {loading ? '...' : '→'}
+            {isProcessing ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function EmptyState() {
+  const { setShowProviderModal, provider } = useAIStore()
+  
+  return (
+    <div className="h-full flex items-center justify-center text-center p-8">
+      <div className="max-w-sm">
+        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Bot className="w-8 h-8 text-slate-400" />
+        </div>
+        <h2 className="text-xl font-semibold text-slate-900 mb-2">Nyxer_</h2>
+        <p className="text-slate-500 mb-6">
+          Describe a product idea — hardware, software, or hybrid — and I'll generate code, diagrams, and 3D models.
+        </p>
+        {!provider && (
+          <button
+            onClick={() => setShowProviderModal(true)}
+            className="px-6 py-3 bg-slate-900 text-white font-medium rounded-xl hover:bg-slate-800 transition-colors"
+          >
+            Get Started
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MessageBubble({ message }: { message: typeof import('../store/aiStore').Message }) {
+  const isUser = message.role === 'user'
+  
+  return (
+    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+        isUser ? 'bg-slate-900' : 'bg-slate-100'
+      }`}>
+        {isUser ? (
+          <User className="w-4 h-4 text-white" />
+        ) : (
+          <Bot className="w-4 h-4 text-slate-600" />
+        )}
+      </div>
+      
+      <div className={`flex-1 max-w-[75%] ${isUser ? 'text-right' : ''}`}>
+        <div className={`inline-block px-4 py-2.5 rounded-2xl ${
+          isUser 
+            ? 'bg-slate-900 text-white' 
+            : 'bg-slate-100 text-slate-900'
+        }`}>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+        </div>
+        
+        {message.prototype && (
+          <PrototypeCard prototype={message.prototype} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PrototypeCard({ prototype }: { prototype: NonNullable<typeof import('../store/aiStore').Message>['prototype'] }) {
+  return (
+    <div className="mt-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+      <div className="flex items-center gap-2 text-emerald-700 text-sm font-medium mb-2">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Prototype Generated
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-xs text-emerald-600">
+        <div>{prototype.code?.length || 0} files</div>
+        <div>{prototype.diagrams?.length || 0} diagrams</div>
+        <div>{prototype.instructions?.length || 0} steps</div>
       </div>
     </div>
   )

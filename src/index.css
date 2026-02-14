@@ -9,9 +9,11 @@
 }
 
 body {
-  font-family: 'Courier New', Courier, monospace;
-  background: white;
-  color: black;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::-webkit-scrollbar {
@@ -20,14 +22,41 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: white;
-  border-left: 2px solid black;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: black;
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+::selection {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
 }
 
 button {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: inherit;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Code font */
+code, pre, .font-mono {
+  font-feature-settings: "liga" 0;
 }

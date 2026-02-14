@@ -7,7 +7,15 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        mono: ['Courier New', 'Courier', 'monospace'],
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif'
+        ],
       },
     },
   },

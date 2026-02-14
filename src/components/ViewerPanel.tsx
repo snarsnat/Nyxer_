@@ -1,40 +1,63 @@
-const tabs = [
-  { id: '3d', label: '3D' },
-  { id: 'diagram', label: 'DIAGRAM' },
-  { id: 'code', label: 'CODE' },
-  { id: 'instructions', label: 'INFO' },
-]
+import { useState } from 'react'
+import { useAIStore } from '../store/aiStore'
+import { FileCode, Box, GitBranch, BookOpen } from 'lucide-react'
+import ThreeDViewer from './ThreeDViewer'
+import DiagramViewer from './DiagramViewer'
+import CodeViewer from './CodeViewer'
+import InstructionsPanel from './InstructionsPanel'
 
-export default function ViewerPanel({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (tab: string) => void }) {
+interface ViewerPanelProps {
+  activeTab: string
+  setActiveTab: (tab: string) => void
+}
+
+export default function ViewerPanel({ activeTab, setActiveTab }: ViewerPanelProps) {
+  const { messages } = useAIStore()
+  const lastPrototype = messages.filter(m => m.prototype).pop()
+
+  const tabs = [
+    { id: '3d', label: '3D Model', icon: Box },
+    { id: 'diagram', label: 'Diagrams', icon: GitBranch },
+    { id: 'code', label: 'Code', icon: FileCode },
+    { id: 'instructions', label: 'Instructions', icon: BookOpen },
+  ]
+
   return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="flex border-b-2 border-black">
+    <div className="flex-1 flex flex-col bg-slate-50">
+      <div className="flex border-b border-slate-200 bg-white">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-3 text-sm font-mono border-r-2 border-black last:border-r-0 ${
+            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
               activeTab === tab.id
-                ? 'bg-black text-white'
-                : 'bg-white hover:bg-gray-100'
+                ? 'text-slate-900 border-b-2 border-slate-900 bg-slate-50'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
+            <tab.icon className="w-4 h-4" />
             {tab.label}
           </button>
         ))}
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {activeTab === '3d' && <ThreeDViewer />}
-        {activeTab === 'diagram' && <DiagramViewer />}
-        {activeTab === 'code' && <CodeViewer />}
-        {activeTab === 'instructions' && <Instructions />}
+        {activeTab === '3d' && (
+          <ThreeDViewer modelType={lastPrototype?.prototype?.modelType} />
+        )}
+        {activeTab === 'diagram' && (
+          <DiagramViewer diagrams={lastPrototype?.prototype?.diagrams} />
+        )}
+        {activeTab === 'code' && (
+          <CodeViewer files={lastPrototype?.prototype?.code} />
+        )}
+        {activeTab === 'instructions' && (
+          <InstructionsPanel 
+            instructions={lastPrototype?.prototype?.instructions}
+            parts={lastPrototype?.prototype?.parts}
+          />
+        )}
       </div>
     </div>
   )
 }
-
-import ThreeDViewer from './ThreeDViewer'
-import DiagramViewer from './DiagramViewer'
-import CodeViewer from './CodeViewer'
-import Instructions from './Instructions'
