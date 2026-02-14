@@ -9,9 +9,9 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #0f172a;
-  color: white;
+  font-family: 'Courier New', Courier, monospace;
+  background: white;
+  color: black;
 }
 
 ::-webkit-scrollbar {
@@ -20,14 +20,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: white;
+  border-left: 2px solid black;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+  background: black;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+button {
+  font-family: 'Courier New', Courier, monospace;
 }

@@ -1,37 +1,20 @@
-import { GitBranch, Download } from 'lucide-react'
-
 export default function DiagramViewer() {
-  const sampleDiagram = `
-graph TD
-    A[User Input] --> B[AI Analysis]
-    B --> C{Hardware?}
-    C -->|Yes| D[Generate Circuit]
-    C -->|No| E{Software?}
-    E -->|Yes| F[Generate Architecture]
-    E -->|Both| G[Generate Both]
-    D --> H[3D Model]
-    F --> H
-    G --> H
-    H --> I[Download Files]
-  `
-
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-3 border-b border-slate-700 flex justify-between items-center">
-        <h3 className="font-medium">Diagram Viewer</h3>
-        <button className="text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
-          <Download className="w-4 h-4" /> SVG
-        </button>
+    <div className="h-full flex flex-col bg-white">
+      <div className="p-3 border-b-2 border-black">
+        <h3 className="font-mono text-sm font-bold">DIAGRAM VIEWER</h3>
       </div>
-      <div className="flex-1 p-4 bg-slate-800 overflow-auto">
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <GitBranch className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-            <p className="text-slate-400 mb-2">Circuit & Architecture Diagrams</p>
-            <p className="text-xs text-slate-500">
-              Describe a hardware product → circuit diagram<br/>
-              Describe software → architecture diagram
-            </p>
+      <div className="flex-1 p-8 bg-white flex items-center justify-center">
+        <div className="border-2 border-black p-8 max-w-lg w-full">
+          <div className="font-mono text-center mb-4">FLOWCHART</div>
+          <div className="space-y-2 font-mono text-xs">
+            <div className="border-2 border-black p-2 text-center">INPUT</div>
+            <div className="text-center">↓</div>
+            <div className="border-2 border-black p-2 text-center">ANALYSIS</div>
+            <div className="text-center">↓</div>
+            <div className="border-2 border-black p-2 text-center">GENERATE</div>
+            <div className="text-center">↓</div>
+            <div className="border-2 border-black p-2 text-center">OUTPUT</div>
           </div>
         </div>
       </div>

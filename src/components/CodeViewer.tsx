@@ -1,33 +1,21 @@
-import { Download, FileCode } from 'lucide-react'
-
-const sampleFiles = [
-  { name: 'index.html', language: 'html' },
-  { name: 'styles.css', language: 'css' },
-  { name: 'app.js', language: 'javascript' },
-]
-
 export default function CodeViewer() {
-  const code = `// Your generated code will appear here
+  const code = `// nyxer_ generated code
 const product = {
-  name: "Awesome Product",
-  type: "software",
-  features: []
+  name: "example",
+  type: "prototype",
+  files: []
 };
 
-console.log("Hello from Nyxer_!");`
+export default product;`
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-3 border-b border-slate-700 flex justify-between items-center">
-        <h3 className="font-medium">Code Files</h3>
-        <button className="text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
-          <Download className="w-4 h-4" /> Download All
-        </button>
+    <div className="h-full flex flex-col bg-white">
+      <div className="p-3 border-b-2 border-black flex justify-between items-center">
+        <h3 className="font-mono text-sm font-bold">CODE</h3>
+        <span className="font-mono text-xs border-2 border-black px-2 py-1">DOWNLOAD</span>
       </div>
-      <div className="flex-1 overflow-auto bg-slate-900 p-4">
-        <pre className="text-sm font-mono text-slate-300">
-          <code>{code}</code>
-        </pre>
+      <div className="flex-1 bg-gray-100 p-4 overflow-auto">
+        <pre className="font-mono text-xs bg-white border-2 border-black p-4">{code}</pre>
       </div>
     </div>
   )

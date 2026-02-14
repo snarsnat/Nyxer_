@@ -29,78 +29,77 @@ export default function ProviderModal() {
   if (!useAIStore.getState().showProviderModal) return null
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-700">
-        <h2 className="text-xl font-bold mb-4">Select AI Provider</h2>
+    <div className="fixed inset-0 bg-white/90 flex items-center justify-center z-50">
+      <div className="bg-white border-2 border-black p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="font-mono text-lg font-bold">PROVIDER</h2>
+          <button
+            onClick={() => setShowProviderModal(false)}
+            className="font-mono text-xl hover:bg-black hover:text-white px-2"
+          >
+            ×
+          </button>
+        </div>
         
         {step === 1 ? (
           <>
-            <div className="space-y-2 mb-4">
+            <div className="space-y-0 mb-6">
               {PROVIDERS.map(p => (
                 <button
                   key={p.id}
                   onClick={() => { setSelectedProvider(p.id); setStep(2); }}
-                  className={`w-full p-3 rounded-lg text-left transition ${
+                  className={`w-full p-4 text-left font-mono border-2 border-black mb-[-2px] transition ${
                     selectedProvider === p.id 
-                      ? 'bg-cyan-500/20 border border-cyan-500' 
-                      : 'bg-slate-700 hover:bg-slate-600'
+                      ? 'bg-black text-white' 
+                      : 'bg-white hover:bg-gray-100'
                   }`}
                 >
-                  <div className="font-medium">{p.name}</div>
+                  {p.name}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowProviderModal(false)}
-              className="text-slate-400 text-sm hover:text-white"
-            >
-              Cancel
-            </button>
           </>
         ) : (
           <>
             <div className="mb-4">
-              <label className="block text-sm text-slate-400 mb-2">
-                Select Model
-              </label>
+              <label className="block font-mono text-xs mb-2 uppercase">Model</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full p-3 bg-slate-700 rounded-lg border border-slate-600"
+                className="w-full p-3 bg-white border-2 border-black font-mono"
               >
-                <option value="">Choose a model...</option>
+                <option value="">Select model...</option>
                 {currentProvider?.models.map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </div>
             
-            <div className="mb-4">
-              <label className="block text-sm text-slate-400 mb-2">
-                API Key (stored locally, never shared)
-              </label>
+            <div className="mb-6">
+              <label className="block font-mono text-xs mb-2 uppercase">API Key</label>
               <input
                 type="password"
                 value={key}
                 onChange={(e) => setKey(e.target.value)}
                 placeholder="sk-..."
-                className="w-full p-3 bg-slate-700 rounded-lg border border-slate-600"
+                className="w-full p-3 bg-white border-2 border-black font-mono"
               />
+              <p className="font-mono text-xs mt-2 text-gray-500">Stored locally. Never sent anywhere else.</p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={() => setStep(1)}
-                className="px-4 py-2 text-slate-400 hover:text-white"
+                className="px-4 py-3 font-mono border-2 border-black hover:bg-black hover:text-white"
               >
-                Back
+                BACK
               </button>
               <button
                 onClick={handleSave}
                 disabled={!selectedModel || !key}
-                className="flex-1 py-2 bg-cyan-500 hover:bg-cyan-400 rounded-lg font-medium disabled:opacity-50"
+                className="flex-1 py-3 bg-black text-white font-mono border-2 border-black hover:bg-gray-800 disabled:opacity-50"
               >
-                Save
+                SAVE
               </button>
             </div>
           </>
