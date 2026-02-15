@@ -51,10 +51,10 @@ export default function ChatPanel() {
       updateLastMessage({
         content: response.content,
         prototype: {
-          code: response.code,
-          diagrams: response.diagrams,
+          code: response.code as any,
+          diagrams: response.diagrams as any,
           instructions: response.instructions,
-          parts: response.parts,
+          partsList: response.parts,
           modelType: response.modelType
         }
       })
@@ -152,7 +152,7 @@ function EmptyState() {
   )
 }
 
-function MessageBubble({ message }: { message: typeof import('../store/aiStore').Message }) {
+function MessageBubble({ message }: { message: any }) {
   const isUser = message.role === 'user'
   
   return (
@@ -184,7 +184,7 @@ function MessageBubble({ message }: { message: typeof import('../store/aiStore')
   )
 }
 
-function PrototypeCard({ prototype }: { prototype: NonNullable<typeof import('../store/aiStore').Message>['prototype'] }) {
+function PrototypeCard({ prototype }: { prototype: any }) {
   return (
     <div className="mt-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
       <div className="flex items-center gap-2 text-emerald-700 text-sm font-medium mb-2">

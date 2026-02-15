@@ -6,12 +6,8 @@ import DiagramViewer from './DiagramViewer'
 import CodeViewer from './CodeViewer'
 import InstructionsPanel from './InstructionsPanel'
 
-interface ViewerPanelProps {
-  activeTab: string
-  setActiveTab: (tab: string) => void
-}
-
-export default function ViewerPanel({ activeTab, setActiveTab }: ViewerPanelProps) {
+export default function ViewerPanel() {
+  const [activeTab, setActiveTab] = useState('3d')
   const { messages } = useAIStore()
   const lastPrototype = messages.filter(m => m.prototype).pop()
 
@@ -54,7 +50,7 @@ export default function ViewerPanel({ activeTab, setActiveTab }: ViewerPanelProp
         {activeTab === 'instructions' && (
           <InstructionsPanel 
             instructions={lastPrototype?.prototype?.instructions}
-            parts={lastPrototype?.prototype?.parts}
+            parts={lastPrototype?.prototype?.partsList}
           />
         )}
       </div>
