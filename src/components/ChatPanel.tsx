@@ -42,14 +42,14 @@ export default function ChatPanel() {
     try {
       addMessage({
         role: 'assistant',
-        content: '',
+        content: 'Generating your prototype...',
         prototype: undefined
       })
       
       const response = await generatePrototype(userMessage, provider)
       
       updateLastMessage({
-        content: response.content,
+        content: response.content || `Here is your prototype for: ${userMessage}`,
         prototype: {
           code: response.code as any,
           diagrams: response.diagrams as any,

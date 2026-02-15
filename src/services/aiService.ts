@@ -91,7 +91,7 @@ async function generateWithAnthropic(apiKey: string, prompt: string, productIdea
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20240620',
       max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }]
     })
@@ -116,7 +116,8 @@ async function generateWithOpenAI(apiKey: string, prompt: string, productIdea: s
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 4096
+      max_tokens: 4096,
+      response_format: { type: "json_object" }
     })
   })
 
@@ -131,8 +132,19 @@ async function generateWithOpenAI(apiKey: string, prompt: string, productIdea: s
 
 function parseResponse(content: string, productIdea: string): GenerationResponse {
   try {
-    const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
-    const parsed = JSON.parse(cleaned)
+    // Try to find JSON in the response if it's wrapped in markdown or other text
+    let jsonStr = content.trim()
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0]
+    }
+    
+    const parsed = JSON.parse(jsonStr)
+    
+    // Ensure the response isn't just echoing the prompt
+    if (parsed.content === productIdea || (parsed.instructions && parsed.instructions.length === 0)) {
+      throw new Error('AI returned empty or echoing response')
+    }
     
     return {
       content: parsed.content || `Building: ${productIdea}`,
@@ -153,7 +165,8 @@ function parseResponse(content: string, productIdea: string): GenerationResponse
       parts: parsed.parts || [],
       modelType: parsed.modelType || 'simple'
     }
-  } catch {
+  } catch (e) {
+    console.error('Failed to parse AI response:', e)
     return generateFallback(productIdea)
   }
 }
