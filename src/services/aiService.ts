@@ -16,72 +16,49 @@ export async function generatePrototype(productIdea: string, provider: string): 
     throw new Error('API key not configured')
   }
 
-  const prompt = `You are Nyxer, an AI product prototyping assistant. Generate a complete prototype specification for:
+  const systemPrompt = `You are Nyxer, an expert product engineer and architect. 
+Your task is to turn a product idea into a complete, tangible prototype specification.
+You MUST respond with a valid JSON object and NOTHING ELSE. Do not echo the user's prompt.
+Provide deep, technical, and actionable content.`
 
-${productIdea}
+  const userPrompt = `Generate a complete prototype for this idea: "${productIdea}"
 
-Respond with ONLY a JSON object (no markdown, no code blocks) with this exact structure:
+The response must be a JSON object with this structure:
 {
-  "content": "Brief description of what we're building",
+  "content": "A professional executive summary of the product architecture and technical approach.",
   "code": [
-    { "name": "filename.ext", "content": "full code content", "language": "javascript/python/c/arduino/cpp/etc" }
+    { "name": "path/to/file.ext", "content": "Full source code", "language": "programming_language" }
   ],
   "diagrams": [
-    { "name": "diagram name", "content": "mermaid diagram code" }
+    { "name": "System Architecture", "content": "mermaid_code" }
   ],
   "instructions": [
-    "Step 1: Do this...",
-    "Step 2: Do that..."
+    "Detailed step-by-step build guide..."
   ],
   "parts": [
-    { "name": "Component name", "quantity": 1, "description": "What it does" }
+    { "name": "Component", "quantity": 1, "description": "Purpose" }
   ],
-  "modelType": "simple/custom/hardware/robot/display/sensor"
+  "modelType": "robot | hardware | display | sensor | custom"
 }
 
-IMPORTANT DIAGRAM GUIDELINES:
-- For hardware projects: Create multiple diagrams including:
-  1. System Architecture (flowchart showing data flow)
-  2. Circuit Diagram (if applicable, show component connections)
-  3. Component Layout (physical arrangement)
-- For software projects: Create:
-  1. Architecture Diagram (system components)
-  2. Data Flow Diagram
-  3. User Flow (if applicable)
-- Use Mermaid syntax properly:
-  - flowchart TD/LR for flowcharts
-  - graph TD/LR for general graphs
-  - sequenceDiagram for sequences
-  - Use clear, descriptive node labels
-  - Show connections with arrows and labels
+Guidelines:
+1. Code: Provide multiple files if necessary (e.g., main.ino, config.h, utils.cpp). Use realistic file paths.
+2. Diagrams: Use Mermaid.js. Include at least a System Architecture flowchart.
+3. 3D Model: Choose the most appropriate 'modelType'.
+4. Content: Do NOT just repeat the prompt. Explain HOW it works.
 
-For 3D model type:
-- "simple" = basic geometric shapes
-- "custom" = creative use of primitives
-- "hardware" = circuit board/component style
-- "robot" = robotic character with expressive features
-- "display" = screen/monitor/device
-- "sensor" = sensor module with indicator lights
-
-For CODE:
-- Provide complete, working code
-- Include comments explaining key parts
-- For Arduino/ESP32: include full setup() and loop()
-- For Python: include imports and main execution
-- Make it production-ready
-
-Make it real, detailed, and immediately actionable.`
+Respond ONLY with the JSON object.`
 
   if (provider === 'anthropic') {
-    return generateWithAnthropic(apiKey, prompt, productIdea)
+    return generateWithAnthropic(apiKey, systemPrompt, userPrompt, productIdea)
   } else if (provider === 'openai') {
-    return generateWithOpenAI(apiKey, prompt, productIdea)
+    return generateWithOpenAI(apiKey, systemPrompt, userPrompt, productIdea)
   } else {
     throw new Error(`Provider ${provider} not yet implemented`)
   }
 }
 
-async function generateWithAnthropic(apiKey: string, prompt: string, productIdea: string): Promise<GenerationResponse> {
+async function generateWithAnthropic(apiKey: string, systemPrompt: string, userPrompt: string, productIdea: string): Promise<GenerationResponse> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -93,7 +70,8 @@ async function generateWithAnthropic(apiKey: string, prompt: string, productIdea
     body: JSON.stringify({
       model: 'claude-3-5-sonnet-20240620',
       max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }]
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
     })
   })
 
@@ -106,7 +84,7 @@ async function generateWithAnthropic(apiKey: string, prompt: string, productIdea
   return parseResponse(data.content[0].text, productIdea)
 }
 
-async function generateWithOpenAI(apiKey: string, prompt: string, productIdea: string): Promise<GenerationResponse> {
+async function generateWithOpenAI(apiKey: string, systemPrompt: string, userPrompt: string, productIdea: string): Promise<GenerationResponse> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -115,7 +93,10 @@ async function generateWithOpenAI(apiKey: string, prompt: string, productIdea: s
     },
     body: JSON.stringify({
       model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
       max_tokens: 4096,
       response_format: { type: "json_object" }
     })
@@ -132,7 +113,6 @@ async function generateWithOpenAI(apiKey: string, prompt: string, productIdea: s
 
 function parseResponse(content: string, productIdea: string): GenerationResponse {
   try {
-    // Try to find JSON in the response if it's wrapped in markdown or other text
     let jsonStr = content.trim()
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
@@ -141,13 +121,8 @@ function parseResponse(content: string, productIdea: string): GenerationResponse
     
     const parsed = JSON.parse(jsonStr)
     
-    // Ensure the response isn't just echoing the prompt
-    if (parsed.content === productIdea || (parsed.instructions && parsed.instructions.length === 0)) {
-      throw new Error('AI returned empty or echoing response')
-    }
-    
     return {
-      content: parsed.content || `Building: ${productIdea}`,
+      content: parsed.content || `Prototype for: ${productIdea}`,
       code: (parsed.code || []).map((c: any, idx: number) => ({
         id: `code-${idx}-${Date.now()}`,
         name: c.name || `file-${idx}`,
@@ -173,12 +148,12 @@ function parseResponse(content: string, productIdea: string): GenerationResponse
 
 function generateFallback(productIdea: string): GenerationResponse {
   return {
-    content: `Generating prototype for: ${productIdea}`,
+    content: `Technical breakdown for: ${productIdea}`,
     code: [
       {
         id: `code-0-${Date.now()}`,
-        name: 'prototype.js',
-        content: `// ${productIdea}\n// Generated by Nyxer_\n\nconst config = {\n  product: "${productIdea}",\n  version: "1.0.0",\n  features: []\n};\n\nexport default config;`,
+        name: 'main.js',
+        content: `// ${productIdea}\n// Generated by Nyxer_\n\nconsole.log("Initializing ${productIdea}...");`,
         type: 'code',
         language: 'javascript'
       }
@@ -187,19 +162,18 @@ function generateFallback(productIdea: string): GenerationResponse {
       {
         id: `diagram-0-${Date.now()}`,
         name: 'System Overview',
-        content: `graph TD\n    A[Input] --> B[Processing] --> C[Output]`,
+        content: `graph TD\n    User[User] --> Input[Input Interface]\n    Input --> Logic[Core Logic]\n    Logic --> Output[Output Action]`,
         type: 'diagram'
       }
     ],
     instructions: [
-      'Set up your development environment',
-      'Copy the generated code',
-      'Customize for your needs',
-      'Deploy and test'
+      'Define the core requirements',
+      'Select appropriate hardware/software stack',
+      'Implement the logic provided in the code section',
+      'Test and iterate'
     ],
     parts: [
-      { name: 'Microcontroller', quantity: 1, description: 'Main processing unit' },
-      { name: 'Power Supply', quantity: 1, description: '5V USB or battery' }
+      { name: 'Processor', quantity: 1, description: 'Main compute unit' }
     ],
     modelType: 'simple'
   }
